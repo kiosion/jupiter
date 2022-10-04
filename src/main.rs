@@ -1,47 +1,17 @@
-use eframe::{
-    NativeOptions,
-    egui::{
-        CentralPanel,
-        Color32,
-        CtxRef,
-        FontDefinitions,
-        FontFamily,
-        Hyperlink,
-        Label,
-        Layout,
-        ScrollArea,
-        Separator,
-        Vec2
-    },
-    epi::App,
-    run_native
-};
+use eframe::{NativeOptions, run_native};
+use eframe::epi::App;
+use eframe::egui::{CentralPanel, Label, Vec2, Ui, Separator, ScrollArea, TopBottomPanel, Hyperlink, CtxRef, Layout};
 
-use std::{borrow::Cow, iter::FromIterator};
+mod consts;
+use consts::{PADDING_XL, PADDING_LG, PADDING_MD, COLOR_WHITE};
 
-const LIST_PADDING_TOP: f32 = 6.0;
-const LIST_PADDING: f32 = 4.0;
-
-const COLOR_WHITE: Color32 = Color32::from_rgb(255, 255, 255);
-const COLOR_CYAN: Color32 = Color32::from_rgb(0, 255, 255);
-
-struct Jupiter {
-    notes: Vec<NoteCardData>
-}
-
-struct NoteCardData {
-    title: String,
-    date: String,
-    content: String,
-    path: String
-}
+mod jupiter;
+use jupiter::{Jupiter};
 
 impl App for Jupiter {
-    // One-time call for init of egui app
     fn setup(
         &mut self,
         ctx: &eframe::egui::CtxRef,
-        // N/A for now
         _frame: &mut eframe::epi::Frame<'_>,
         _storage: Option<&dyn eframe::epi::Storage>
     ){
@@ -49,81 +19,83 @@ impl App for Jupiter {
     }
 
     fn update(&mut self, ctx: &eframe::egui::CtxRef, frame: &mut eframe::epi::Frame<'_>) {
-        // Add any widgets/react to state changes
-        CentralPanel::default().show(ctx, |ui| {
-            ui.label("Jupiter");
 
-            // TODO
-            self.render_note_cards(ui);
+        if self.config.dark_mode {
+            ctx.set_visuals(eframe::egui::Visuals::dark());
+        } else {
+            ctx.set_visuals(eframe::egui::Visuals::light());
+        }
+
+        self.render_top_panel(ctx, frame);
+
+        // TODO: Central panel should become a left panel when item is opened. collapsable.
+        CentralPanel::default().show(ctx, |ui| {
+            // Main heading
+            render_header(ui);
+            ui.add_space(PADDING_LG);
+
+            // Content (temp. just a hardcoded list)
+            ScrollArea::auto_sized().show(ui, |ui| {
+                self.render_note_cards(ui);
+            });
+
+            // Can get Ui handle from ctx
+            render_footer(ctx);
         });
     }
 
     fn name(&self) -> &str {
         "Jupiter"
     }
+
+    fn warm_up_enabled(&self) -> bool {
+        false
+    }
+
+    fn save(&mut self, _storage: &mut dyn eframe::epi::Storage) {}
+
+    fn on_exit(&mut self) {}
+
+    fn auto_save_interval(&self) -> std::time::Duration {
+        std::time::Duration::from_secs(30)
+    }
+
+    fn clear_color(&self) -> eframe::egui::Rgba {
+        // NOTE: a bright gray makes the shadows of the windows look weird.
+        // We use a bit of transparency so that if the user switches on the
+        // `transparent()` option they get immediate results.
+        eframe::egui::Color32::from_rgba_unmultiplied(12, 12, 12, 180).into()
+    }
 }
 
-impl Jupiter {
-    fn new() -> Jupiter {
-        let iter = (0..10).map(|a| NoteCardData {
-            title: format!("title{}", a),
-            date: "n/a".to_string(),
-            content: format!("content{}", a),
-            path: format!("/home/kio/somewhere{}", a)
+fn render_footer(ctx: &CtxRef) {
+    TopBottomPanel::bottom("footer").show(ctx, |ui| {
+        ui.vertical_centered(|ui| {
+            ui.add_space(PADDING_LG);
+
+            ui.add(Label::new("Made with <3 by kio").text_style(eframe::egui::TextStyle::Small));
+            ui.style_mut().visuals.hyperlink_color = COLOR_WHITE;
+            // ui.add(Hyperlink::new("https://github.com/kiosion/jupiter").text("Github").text_style(eframe::egui::TextStyle::Small));
+            
+            ui.add_space(PADDING_MD);
         });
-        Jupiter {
-            notes: Vec::from_iter(iter)
-        }
-    }
+    });
+}
 
-    fn configure_fonts(&self, ctx: &CtxRef) {
-        // Create font def obj
-        // load font
-        // set size of various text styles
-        // finally load font using ctx obj
-        let mut font_def = FontDefinitions::default();
-        font_def.font_data.insert("SourceSansPro".to_string(), Cow::Borrowed(include_bytes!("./fonts/SourceSansPro-Regular.ttf")));
-        font_def.family_and_size.insert(eframe::egui::TextStyle::Heading, (FontFamily::Proportional, 34.));
-        font_def.family_and_size.insert(eframe::egui::TextStyle::Body, (FontFamily::Proportional, 20.));
-        font_def.fonts_for_family.get_mut(&FontFamily::Proportional).unwrap().insert(0, "SourceSansPro".to_string());
-        ctx.set_fonts(font_def);
-    }
-
-    fn render_note_cards(&self, ui: &mut eframe::egui::Ui) {
-        ui.add_space(LIST_PADDING_TOP);
-
-        ScrollArea::auto_sized().show(ui, |ui| {
-            for a in &self.notes {
-                ui.add_space(LIST_PADDING_TOP);
-                
-                let title = format!("> {}", a.title);
-                ui.colored_label(COLOR_WHITE, title);
-                ui.add_space(LIST_PADDING);
-                ui.label(&a.date);
-                
-                let content = Label::new(&a.content).text_style(eframe::egui::TextStyle::Button);
-                ui.add(content);
-
-                // path / date (todo)
-                ui.style_mut().visuals.hyperlink_color = COLOR_CYAN;
-                ui.add_space(LIST_PADDING);
-                ui.with_layout(Layout::left_to_right(), |ui| {
-                    ui.add(Hyperlink::new(&a.path).text("Open <"));
-                });
-                
-                // separator
-                ui.add_space(LIST_PADDING);
-                ui.add(Separator::default());
-                // ui.label(&a.content);
-            }
-        });
-    }
+fn render_header(ui: &mut Ui) {
+    ui.vertical_centered(|ui| {
+        ui.heading("Home");
+    });
+    ui.add_space(PADDING_XL);
+    let sep = Separator::default().spacing(PADDING_XL);
+    ui.add(sep);
 }
 
 fn main() {
     let app = Jupiter::new();
-    let mut win_options = NativeOptions::default();
-    // Modify window opts
-    win_options.initial_window_size = Some(Vec2::new(560., 740.));
-    run_native(Box::new(app), win_options);
+    let mut win_opts = NativeOptions::default();
+    win_opts.initial_window_size = Some(Vec2::new(560., 740.));
+    win_opts.transparent = true;
+    win_opts.decorated = false;
+    run_native(Box::new(app), win_opts);
 }
