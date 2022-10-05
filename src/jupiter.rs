@@ -59,7 +59,6 @@ impl Jupiter {
 
     pub fn render_note_cards(&self, ui: &mut eframe::egui::Ui) {
         for a in &self.notes {
-            ui.add_space(PADDING_MD);
             // Title
             let title = Label::new(format!("> {}", a.title));
             if self.config.dark_mode {
@@ -86,6 +85,7 @@ impl Jupiter {
             // Separator
             ui.add_space(PADDING_SM);
             ui.add(Separator::default());
+            ui.add_space(PADDING_MD);
         }
     }
 

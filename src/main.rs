@@ -83,6 +83,7 @@ fn render_footer(ctx: &CtxRef) {
 }
 
 fn render_header(ui: &mut Ui) {
+    ui.add_space(PADDING_XL);
     ui.vertical_centered(|ui| {
         ui.heading("Home");
     });

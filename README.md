@@ -1,5 +1,28 @@
-# jupiter
-Simple, lightweight, markdown-based notes app.
+# Jupiter
+A simple markdown & git-based notes app for Linux.
 
-I give up trying to find my ideal notes app / reader, so I'm making my own... Don't expect this to be finished anytime soon, I still suck with Rust :)
+## Features
+- Lightweight with minimal dependencies
+- Git integration for syncing & versioning
+- Search / filtering
+- Themeing support
 
+### Planned
+- Tags / categories / folders
+- Encryption
+
+## Installation
+To install, either download the latest releast from the [releases page](https://github.com/kiosion/jupiter/releases), install the AUR package `jupiter-git`, or build from source.
+
+## Building
+### Dependencies
+- [Rust](https://www.rust-lang.org/tools/install)
+
+### Building
+```bash
+git clone https://github.com/kiosion/jupiter.git && cd jupiter
+cargo build --release
+```
+
+## License
+This project is licensed under the [MIT License](LICENSE).
